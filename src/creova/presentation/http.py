@@ -7,6 +7,7 @@ from typing import Any
 from aiogram.types import Update
 from fastapi import FastAPI, Header, HTTPException, Request, status
 
+from creova.composition import AppContainer, build_container
 from creova.config import Settings
 from creova.presentation.telegram.runtime import TelegramRuntime, build_telegram_runtime
 
@@ -17,8 +18,13 @@ def get_settings() -> Settings:
 
 
 @lru_cache(maxsize=1)
+def get_container() -> AppContainer:
+    return build_container(get_settings())
+
+
+@lru_cache(maxsize=1)
 def get_runtime() -> TelegramRuntime:
-    return build_telegram_runtime(get_settings())
+    return build_telegram_runtime(get_settings(), get_container())
 
 
 def create_app() -> FastAPI:
@@ -29,10 +35,14 @@ def create_app() -> FastAPI:
         return {"status": "ok"}
 
     @application.get("/health/ready")
-    async def readiness() -> dict[str, str]:
+    async def readiness() -> dict[str, object]:
         settings = get_settings()
-        settings.require_bot_token()
-        return {"status": "ready", "mode": settings.telegram_mode.value}
+        diagnostics = get_container().startup_diagnostics
+        return {
+            "status": "ready",
+            "mode": settings.telegram_mode.value,
+            "missing_optional_variables": diagnostics.missing_optional_variable_names,
+        }
 
     @application.post(get_settings().telegram_webhook_path, include_in_schema=False)
     async def telegram_webhook(

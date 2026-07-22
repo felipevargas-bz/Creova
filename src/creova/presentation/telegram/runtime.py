@@ -6,9 +6,8 @@ from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 
-from creova.application.access import AccessService
+from creova.composition import AppContainer, build_container
 from creova.config import Settings
-from creova.infrastructure.memory import BootstrapAccessGrantRepository
 from creova.presentation.telegram.access_middleware import AllowlistMiddleware
 from creova.presentation.telegram.handlers import router
 
@@ -19,19 +18,17 @@ class TelegramRuntime:
     dispatcher: Dispatcher
 
 
-def build_telegram_runtime(settings: Settings) -> TelegramRuntime:
-    repository = BootstrapAccessGrantRepository(
-        admin_ids=settings.bootstrap_admin_ids,
-        allowed_ids=settings.bootstrap_allowed_user_ids,
-    )
-    access_service = AccessService(repository)
-
+def build_telegram_runtime(
+    settings: Settings,
+    container: AppContainer | None = None,
+) -> TelegramRuntime:
+    resolved_container = container or build_container(settings)
     bot = Bot(
         token=settings.require_bot_token(),
         default=DefaultBotProperties(parse_mode=ParseMode.HTML),
     )
     dispatcher = Dispatcher()
-    dispatcher.message.middleware(AllowlistMiddleware(access_service))
-    dispatcher.callback_query.middleware(AllowlistMiddleware(access_service))
+    dispatcher.message.middleware(AllowlistMiddleware(resolved_container.access_service))
+    dispatcher.callback_query.middleware(AllowlistMiddleware(resolved_container.access_service))
     dispatcher.include_router(router)
     return TelegramRuntime(bot=bot, dispatcher=dispatcher)
