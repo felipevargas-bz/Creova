@@ -3,6 +3,7 @@ from creova.config import Settings
 from creova.domain.enums import CreativeProvider, ImageRenderer
 from creova.infrastructure.fakes import FakeImageGenerationProvider, FakePromptAssistant
 from creova.infrastructure.gemini import GeminiImageRenderer, GeminiPromptAssistant
+from creova.infrastructure.openai import OpenAIImageRenderer, OpenAIPromptAssistant
 
 
 def test_composition_wires_fakes_by_default_in_tests() -> None:
@@ -63,3 +64,42 @@ def test_composition_wires_gemini_adapters_outside_tests_when_configured() -> No
         GeminiPromptAssistant,
     )
     assert isinstance(container.image_renderers[ImageRenderer.NANO_BANANA], GeminiImageRenderer)
+
+
+def test_composition_wires_openai_adapters_outside_tests_when_configured() -> None:
+    container = build_container(
+        Settings(
+            env="local",
+            telegram_bot_token="",
+            enabled_creative_providers="chatgpt",
+            enabled_image_renderers="chatgpt",
+            default_image_renderer="chatgpt",
+            openai_api_key="fake-openai-key",
+            openai_assistant_model="gpt-assistant",
+            openai_image_model="gpt-image",
+        )
+    )
+
+    assert isinstance(
+        container.prompt_assistants[CreativeProvider.CHATGPT],
+        OpenAIPromptAssistant,
+    )
+    assert isinstance(container.image_renderers[ImageRenderer.CHATGPT], OpenAIImageRenderer)
+
+
+def test_composition_does_not_wire_openai_adapters_without_model_ids() -> None:
+    container = build_container(
+        Settings(
+            env="local",
+            telegram_bot_token="",
+            enabled_creative_providers="chatgpt",
+            enabled_image_renderers="chatgpt",
+            default_image_renderer="chatgpt",
+            openai_api_key="fake-openai-key",
+            openai_assistant_model="",
+            openai_image_model="",
+        )
+    )
+
+    assert container.prompt_assistants == {}
+    assert container.image_renderers == {}

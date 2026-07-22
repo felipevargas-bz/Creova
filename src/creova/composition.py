@@ -20,6 +20,11 @@ from creova.infrastructure.gemini import (
     create_gemini_client_from_api_key,
 )
 from creova.infrastructure.memory import BootstrapAccessGrantRepository
+from creova.infrastructure.openai import (
+    OpenAIImageRenderer,
+    OpenAIPromptAssistant,
+    create_openai_client_from_api_key,
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -74,11 +79,20 @@ def _build_prompt_assistants(
     if settings.env != "test":
         assistants: dict[CreativeProvider, PromptAssistant] = {}
         if _enabled_provider(availability, CreativeProvider.NANO_BANANA):
-            client = create_gemini_client_from_api_key(settings.google_api_key)
+            gemini_client = create_gemini_client_from_api_key(settings.google_api_key)
             model_id = settings.google_assistant_model or settings.google_image_model
             assistants[CreativeProvider.NANO_BANANA] = GeminiPromptAssistant(
-                client=client,
+                client=gemini_client,
                 model_id=model_id,
+            )
+        if (
+            _enabled_provider(availability, CreativeProvider.CHATGPT)
+            and settings.openai_assistant_model
+        ):
+            openai_client = create_openai_client_from_api_key(settings.openai_api_key)
+            assistants[CreativeProvider.CHATGPT] = OpenAIPromptAssistant(
+                client=openai_client,
+                model_id=settings.openai_assistant_model,
             )
         return assistants
     return {
@@ -95,10 +109,19 @@ def _build_image_renderers(
     if settings.env != "test":
         production_renderers: dict[ImageRenderer, ImageGenerationProvider] = {}
         if _enabled_renderer(availability, CreativeProvider.NANO_BANANA):
-            client = create_gemini_client_from_api_key(settings.google_api_key)
+            gemini_client = create_gemini_client_from_api_key(settings.google_api_key)
             production_renderers[ImageRenderer.NANO_BANANA] = GeminiImageRenderer(
-                client=client,
+                client=gemini_client,
                 model_id=settings.google_image_model,
+            )
+        if (
+            _enabled_renderer(availability, CreativeProvider.CHATGPT)
+            and settings.openai_image_model
+        ):
+            openai_client = create_openai_client_from_api_key(settings.openai_api_key)
+            production_renderers[ImageRenderer.CHATGPT] = OpenAIImageRenderer(
+                client=openai_client,
+                model_id=settings.openai_image_model,
             )
         return production_renderers
     test_renderers: dict[ImageRenderer, ImageGenerationProvider] = {}
