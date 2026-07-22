@@ -7,6 +7,7 @@ from typing import Protocol
 from uuid import UUID
 
 from creova.application.ports import PromptAssistant
+from creova.application.prompt_contracts import validate_brief_assessment
 from creova.domain.enums import ConversationStage, CreativeProvider, ImageRenderer
 from creova.domain.errors import InvalidStateTransition
 from creova.domain.models import ImageConversation
@@ -249,6 +250,7 @@ class CreativeConversationService:
             ),
             renderer=conversation.renderer_provider,
         )
+        assessment = validate_brief_assessment(assessment, current_brief=conversation.brief)
         return conversation.apply_assessment(
             brief_patch=assessment.brief_patch,
             next_question=assessment.next_question,

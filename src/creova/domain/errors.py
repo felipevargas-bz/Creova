@@ -10,6 +10,10 @@ class InvalidStateTransition(CreovaError):
     pass
 
 
+class ContractViolation(CreovaError):
+    pass
+
+
 class QuotaExceeded(CreovaError):
     pass
 
