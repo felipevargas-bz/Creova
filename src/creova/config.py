@@ -19,6 +19,7 @@ class Settings(BaseSettings):
         env_prefix="CREOVA_",
         env_file=".env",
         env_file_encoding="utf-8",
+        enable_decoding=False,
         extra="ignore",
     )
 

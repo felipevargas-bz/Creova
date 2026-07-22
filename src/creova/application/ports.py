@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Mapping
 from dataclasses import dataclass
-from typing import Mapping, Protocol
+from typing import Protocol
 
 from creova.domain.enums import CreativeProvider, ImageRenderer
 from creova.domain.models import AccessGrant, CreativeBrief, GenerationSpec
