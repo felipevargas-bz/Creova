@@ -40,6 +40,7 @@ def test_provider_credential_availability() -> None:
     settings = Settings(
         telegram_bot_token="fake-token",
         google_api_key="fake-google-key",
+        openai_api_key="",
         anthropic_api_key="fake-anthropic-key",
     )
     assert settings.provider_has_credentials(CreativeProvider.NANO_BANANA)
