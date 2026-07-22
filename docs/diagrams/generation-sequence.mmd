@@ -1,0 +1,26 @@
+sequenceDiagram
+    actor User
+    participant Telegram
+    participant API as Creova API
+    participant Assistant as Prompt Assistant
+    participant DB as PostgreSQL
+    participant Worker
+    participant Renderer as Image Renderer
+    participant Storage
+
+    User->>Telegram: Send simple image idea
+    Telegram->>API: Update
+    API->>DB: Authorize and persist draft
+    API->>Assistant: Assess structured brief
+    Assistant-->>API: Brief patch or one question
+    API-->>Telegram: Ask clarification or show review
+    User->>Telegram: Confirm draft version
+    Telegram->>API: Confirmation callback
+    API->>DB: Reserve budget and create one job
+    API-->>Telegram: Queued acknowledgement
+    Worker->>DB: Claim job with lease
+    Worker->>Renderer: Generate confirmed image
+    Renderer-->>Worker: Image output
+    Worker->>Storage: Validate and store privately
+    Worker->>DB: Persist asset and delivery event
+    Worker-->>Telegram: Deliver image and publishing-later notice

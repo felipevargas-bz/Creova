@@ -1,0 +1,14 @@
+flowchart LR
+    U[Authorized user] -->|private chat| TG[Telegram @FeloCreova_bot]
+    TG --> API[Creova bot/API]
+    API --> DB[(PostgreSQL)]
+    API --> PA[Prompt assistant registry]
+    W[Worker] --> DB
+    W --> IR[Image renderer registry]
+    W --> OS[(Private object storage)]
+    W --> TG
+    PA --> G[Gemini / Nano Banana]
+    PA --> O[OpenAI / ChatGPT]
+    PA --> A[Anthropic / Claude]
+    IR --> G
+    IR --> O
