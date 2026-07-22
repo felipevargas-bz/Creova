@@ -71,3 +71,14 @@ class JobStatus(StrEnum):
     CANCEL_REQUESTED = "cancel_requested"
     CANCELLED = "cancelled"
     EXPIRED = "expired"
+
+
+class ProviderErrorCategory(StrEnum):
+    UNAVAILABLE_PROVIDER = "unavailable_provider"
+    INVALID_PROVIDER_CONFIGURATION = "invalid_provider_configuration"
+    RATE_LIMITED = "rate_limited"
+    TRANSIENT_UPSTREAM_FAILURE = "transient_upstream_failure"
+    POLICY_REJECTION = "policy_rejection"
+    INVALID_GENERATED_OUTPUT = "invalid_generated_output"
+    AMBIGUOUS_EXTERNAL_EFFECT = "ambiguous_external_effect"
+    PERMANENT_PROVIDER_FAILURE = "permanent_provider_failure"

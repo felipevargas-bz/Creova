@@ -14,6 +14,11 @@ from creova.domain.enums import CreativeProvider, ImageRenderer
 from creova.infrastructure.db import DurableAccessGrantRepository, create_async_session_factory
 from creova.infrastructure.db.session import SqlAlchemyUnitOfWork
 from creova.infrastructure.fakes import FakeImageGenerationProvider, FakePromptAssistant
+from creova.infrastructure.gemini import (
+    GeminiImageRenderer,
+    GeminiPromptAssistant,
+    create_gemini_client_from_api_key,
+)
 from creova.infrastructure.memory import BootstrapAccessGrantRepository
 
 
@@ -67,7 +72,15 @@ def _build_prompt_assistants(
     availability: tuple[ProviderAvailability, ...],
 ) -> dict[CreativeProvider, PromptAssistant]:
     if settings.env != "test":
-        return {}
+        assistants: dict[CreativeProvider, PromptAssistant] = {}
+        if _enabled_provider(availability, CreativeProvider.NANO_BANANA):
+            client = create_gemini_client_from_api_key(settings.google_api_key)
+            model_id = settings.google_assistant_model or settings.google_image_model
+            assistants[CreativeProvider.NANO_BANANA] = GeminiPromptAssistant(
+                client=client,
+                model_id=model_id,
+            )
+        return assistants
     return {
         item.provider: FakePromptAssistant(item.provider)
         for item in availability
@@ -80,13 +93,20 @@ def _build_image_renderers(
     availability: tuple[ProviderAvailability, ...],
 ) -> dict[ImageRenderer, ImageGenerationProvider]:
     if settings.env != "test":
-        return {}
-    renderers: dict[ImageRenderer, ImageGenerationProvider] = {}
+        production_renderers: dict[ImageRenderer, ImageGenerationProvider] = {}
+        if _enabled_renderer(availability, CreativeProvider.NANO_BANANA):
+            client = create_gemini_client_from_api_key(settings.google_api_key)
+            production_renderers[ImageRenderer.NANO_BANANA] = GeminiImageRenderer(
+                client=client,
+                model_id=settings.google_image_model,
+            )
+        return production_renderers
+    test_renderers: dict[ImageRenderer, ImageGenerationProvider] = {}
     for item in availability:
         renderer = _renderer_for_provider(item.provider)
         if renderer is not None and item.renderer_enabled:
-            renderers[renderer] = FakeImageGenerationProvider(renderer)
-    return renderers
+            test_renderers[renderer] = FakeImageGenerationProvider(renderer)
+    return test_renderers
 
 
 def _renderer_for_provider(provider: CreativeProvider) -> ImageRenderer | None:
@@ -95,3 +115,23 @@ def _renderer_for_provider(provider: CreativeProvider) -> ImageRenderer | None:
     if provider is CreativeProvider.CHATGPT:
         return ImageRenderer.CHATGPT
     return None
+
+
+def _enabled_provider(
+    availability: tuple[ProviderAvailability, ...],
+    provider: CreativeProvider,
+) -> bool:
+    return any(
+        item.provider is provider and item.assistant_enabled and item.has_credentials
+        for item in availability
+    )
+
+
+def _enabled_renderer(
+    availability: tuple[ProviderAvailability, ...],
+    provider: CreativeProvider,
+) -> bool:
+    return any(
+        item.provider is provider and item.renderer_enabled and item.has_credentials
+        for item in availability
+    )

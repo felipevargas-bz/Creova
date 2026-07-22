@@ -2,6 +2,7 @@ from creova.composition import build_container
 from creova.config import Settings
 from creova.domain.enums import CreativeProvider, ImageRenderer
 from creova.infrastructure.fakes import FakeImageGenerationProvider, FakePromptAssistant
+from creova.infrastructure.gemini import GeminiImageRenderer, GeminiPromptAssistant
 
 
 def test_composition_wires_fakes_by_default_in_tests() -> None:
@@ -38,8 +39,27 @@ def test_composition_does_not_wire_provider_fakes_outside_tests() -> None:
             telegram_bot_token="",
             enabled_creative_providers="nano_banana",
             enabled_image_renderers="nano_banana",
+            google_api_key="",
         )
     )
 
     assert container.prompt_assistants == {}
     assert container.image_renderers == {}
+
+
+def test_composition_wires_gemini_adapters_outside_tests_when_configured() -> None:
+    container = build_container(
+        Settings(
+            env="local",
+            telegram_bot_token="",
+            enabled_creative_providers="nano_banana",
+            enabled_image_renderers="nano_banana",
+            google_api_key="fake-google-key",
+        )
+    )
+
+    assert isinstance(
+        container.prompt_assistants[CreativeProvider.NANO_BANANA],
+        GeminiPromptAssistant,
+    )
+    assert isinstance(container.image_renderers[ImageRenderer.NANO_BANANA], GeminiImageRenderer)
