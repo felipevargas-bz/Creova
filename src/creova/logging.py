@@ -23,7 +23,7 @@ _SENSITIVE_KEY_PARTS = (
 
 
 def redact(value: Any) -> Any:
-    if isinstance(value, (SecretStr, SecretBytes)):
+    if isinstance(value, SecretStr | SecretBytes):
         return REDACTED
     if isinstance(value, Mapping):
         return {

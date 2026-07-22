@@ -115,7 +115,7 @@ class Settings(BaseSettings):
     def parse_id_set(cls, value: Any) -> frozenset[int]:
         if value in (None, ""):
             return frozenset()
-        if isinstance(value, (set, frozenset, list, tuple)):
+        if isinstance(value, set | frozenset | list | tuple):
             return frozenset(int(item) for item in value)
         if isinstance(value, str):
             return frozenset(int(item.strip()) for item in value.split(",") if item.strip())
@@ -137,7 +137,7 @@ class Settings(BaseSettings):
             return frozenset()
         if isinstance(value, str):
             items = [item.strip() for item in value.split(",") if item.strip()]
-        elif isinstance(value, (set, frozenset, list, tuple)):
+        elif isinstance(value, set | frozenset | list | tuple):
             items = list(value)
         else:
             raise TypeError("Expected a comma-separated string or a collection")
