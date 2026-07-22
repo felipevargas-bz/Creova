@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from uuid import uuid4
+from uuid import UUID, uuid4
 
-from creova.domain.enums import AccessRole, AccessStatus
-from creova.domain.models import AccessGrant
+from creova.domain.enums import AccessRole, AccessStatus, ConversationStage
+from creova.domain.models import AccessGrant, ImageConversation
 
 
 class BootstrapAccessGrantRepository:
@@ -25,3 +25,44 @@ class BootstrapAccessGrantRepository:
             status=AccessStatus.ACTIVE,
             valid_from=datetime(2020, 1, 1, tzinfo=UTC),
         )
+
+
+class InMemoryConversationRepository:
+    def __init__(self) -> None:
+        self._conversations: dict[UUID, ImageConversation] = {}
+
+    async def add(self, conversation: ImageConversation) -> None:
+        self._conversations[conversation.id] = conversation
+
+    async def get(self, conversation_id: UUID) -> ImageConversation | None:
+        return self._conversations.get(conversation_id)
+
+    async def save(self, conversation: ImageConversation) -> None:
+        self._conversations[conversation.id] = conversation
+
+    async def get_active(
+        self,
+        *,
+        owner_telegram_user_id: int,
+        chat_id: int,
+    ) -> ImageConversation | None:
+        for conversation in self._conversations.values():
+            if (
+                conversation.owner_telegram_user_id == owner_telegram_user_id
+                and conversation.chat_id == chat_id
+                and conversation.stage not in _TERMINAL_STAGES
+            ):
+                return conversation
+        return None
+
+
+_TERMINAL_STAGES = frozenset(
+    {
+        ConversationStage.QUEUED,
+        ConversationStage.GENERATING,
+        ConversationStage.COMPLETED,
+        ConversationStage.FAILED,
+        ConversationStage.CANCELLED,
+        ConversationStage.EXPIRED,
+    }
+)

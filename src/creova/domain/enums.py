@@ -43,6 +43,13 @@ class ConversationStage(StrEnum):
     EXPIRED = "expired"
 
 
+class BriefProvenance(StrEnum):
+    USER = "user"
+    ASSISTANT = "assistant"
+    INFERRED = "inferred"
+    DEFAULT = "default"
+
+
 class RequestStatus(StrEnum):
     DRAFT = "draft"
     AWAITING_CONFIRMATION = "awaiting_confirmation"
