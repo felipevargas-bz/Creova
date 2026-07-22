@@ -1,0 +1,7 @@
+.env
+.env.*
+!.env.example
+AGENTS.md
+.idea/
+__pycache__/
+.pytest_cache/
