@@ -11,6 +11,7 @@ from creova.application.ports import (
 from creova.config import HealthState, ProviderAvailability, Settings, StartupDiagnostics
 from creova.domain.enums import CreativeProvider, ImageRenderer
 from creova.infrastructure.db import DurableAccessGrantRepository, create_async_session_factory
+from creova.infrastructure.db.session import SqlAlchemyUnitOfWork
 from creova.infrastructure.fakes import FakeImageGenerationProvider, FakePromptAssistant
 from creova.infrastructure.memory import BootstrapAccessGrantRepository
 
@@ -21,6 +22,7 @@ class AppContainer:
     access_service: AccessService
     startup_diagnostics: StartupDiagnostics
     provider_availability: tuple[ProviderAvailability, ...]
+    unit_of_work: SqlAlchemyUnitOfWork | None
     prompt_assistants: dict[CreativeProvider, PromptAssistant]
     image_renderers: dict[ImageRenderer, ImageGenerationProvider]
 
@@ -36,10 +38,13 @@ def build_container(
             admin_ids=resolved_settings.bootstrap_admin_ids,
             allowed_ids=resolved_settings.bootstrap_allowed_user_ids,
         )
+        unit_of_work = None
     else:
-        repository = DurableAccessGrantRepository(
-            create_async_session_factory(resolved_settings.database_url.get_secret_value())
+        session_factory = create_async_session_factory(
+            resolved_settings.database_url.get_secret_value()
         )
+        repository = DurableAccessGrantRepository(session_factory)
+        unit_of_work = SqlAlchemyUnitOfWork(session_factory)
     access_service = AccessService(repository)
     diagnostics = resolved_settings.startup_diagnostics(provider_health=provider_health)
     availability = diagnostics.provider_availability
@@ -48,6 +53,7 @@ def build_container(
         access_service=access_service,
         startup_diagnostics=diagnostics,
         provider_availability=availability,
+        unit_of_work=unit_of_work,
         prompt_assistants=_build_prompt_assistants(resolved_settings, availability),
         image_renderers=_build_image_renderers(resolved_settings, availability),
     )

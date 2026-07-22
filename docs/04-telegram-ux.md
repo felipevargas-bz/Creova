@@ -12,6 +12,18 @@
 
 ## 2. Commands
 
+Configure these commands in BotFather and keep them aligned with `configure_bot_commands`:
+
+```text
+start - Introduce Creova
+create - Start an assisted image request
+status - Check generation status
+history - View your recent images
+cancel - Cancel a draft or request
+whoami - Show your identity and role
+help - Show help
+```
+
 ### `/start`
 
 Authorized response:

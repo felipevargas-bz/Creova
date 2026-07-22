@@ -7,6 +7,7 @@ from aiogram import BaseMiddleware
 from aiogram.types import CallbackQuery, InlineQuery, Message, TelegramObject
 
 from creova.application.access import AccessService
+from creova.presentation.telegram import messages
 
 
 class AllowlistMiddleware(BaseMiddleware):
@@ -54,8 +55,8 @@ class AllowlistMiddleware(BaseMiddleware):
         if is_inline:
             return
         suffix = f"\nYour ID is: <code>{user_id}</code>" if user_id is not None else ""
-        text = "This bot is private and your account does not have access." + suffix
+        text = messages.PRIVATE_DENIED + suffix
         if isinstance(event, Message):
             await event.answer(text)
         elif isinstance(event, CallbackQuery):
-            await event.answer("You do not have access to Creova.", show_alert=True)
+            await event.answer(messages.CALLBACK_DENIED, show_alert=True)

@@ -3,6 +3,7 @@ from creova.infrastructure.db.repositories import (
     DurableAccessGrantRepository,
     SqlAlchemyAccessGrantRepository,
     SqlAlchemyAuditEventRepository,
+    SqlAlchemyConversationRepository,
     SqlAlchemyTelegramUpdateRepository,
     SqlAlchemyUserRepository,
 )
@@ -13,6 +14,7 @@ __all__ = [
     "DurableAccessGrantRepository",
     "SqlAlchemyAccessGrantRepository",
     "SqlAlchemyAuditEventRepository",
+    "SqlAlchemyConversationRepository",
     "SqlAlchemyTelegramUpdateRepository",
     "SqlAlchemyUnitOfWork",
     "SqlAlchemyUserRepository",

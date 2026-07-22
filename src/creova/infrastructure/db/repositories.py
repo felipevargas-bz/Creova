@@ -12,6 +12,7 @@ from creova.domain.models import AccessGrant as DomainAccessGrant
 from creova.infrastructure.db.models import (
     AccessGrant,
     AuditEvent,
+    ImageConversation,
     ProcessedTelegramUpdate,
     TelegramUser,
 )
@@ -226,3 +227,43 @@ class SqlAlchemyTelegramUpdateRepository:
 
     async def get(self, update_id: int) -> ProcessedTelegramUpdate | None:
         return await self._session.get(ProcessedTelegramUpdate, update_id)
+
+    async def mark_processed(self, update_id: int, *, result_code: str = "ok") -> None:
+        update = await self.get(update_id)
+        if update is None:
+            return
+        update.status = "processed"
+        update.processed_at = datetime.now(UTC)
+        update.result_code = result_code
+        await self._session.flush()
+
+    async def mark_failed(self, update_id: int, *, error_code: str) -> None:
+        update = await self.get(update_id)
+        if update is None:
+            return
+        update.status = "failed"
+        update.last_error_code = error_code
+        await self._session.flush()
+
+
+class SqlAlchemyConversationRepository:
+    def __init__(self, session: AsyncSession) -> None:
+        self._session = session
+
+    async def start_image_conversation(
+        self,
+        *,
+        user_id: UUID,
+        chat_id: int,
+        expires_at: datetime,
+    ) -> ImageConversation:
+        conversation = ImageConversation(
+            user_id=user_id,
+            chat_id=chat_id,
+            stage="awaiting_provider",
+            expires_at=expires_at,
+            data={},
+        )
+        self._session.add(conversation)
+        await self._session.flush()
+        return conversation
