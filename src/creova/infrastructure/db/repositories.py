@@ -11,6 +11,7 @@ from creova.domain.enums import AccessRole, AccessStatus
 from creova.domain.models import AccessGrant as DomainAccessGrant
 from creova.infrastructure.db.models import (
     AccessGrant,
+    AuditEvent,
     ProcessedTelegramUpdate,
     TelegramUser,
 )
@@ -112,6 +113,94 @@ class SqlAlchemyAccessGrantRepository:
             valid_until=grant.valid_until,
             limits=grant.limits,
         )
+
+    async def list_for_telegram_user_id(self, telegram_user_id: int) -> list[AccessGrant]:
+        result = await self._session.execute(
+            select(AccessGrant)
+            .join(TelegramUser, TelegramUser.id == AccessGrant.user_id)
+            .where(TelegramUser.telegram_user_id == telegram_user_id)
+            .order_by(AccessGrant.created_at.desc())
+        )
+        return list(result.scalars())
+
+    async def list_all(
+        self,
+        *,
+        status: AccessStatus | None = None,
+    ) -> list[tuple[TelegramUser, AccessGrant]]:
+        statement = select(TelegramUser, AccessGrant).join(
+            AccessGrant,
+            TelegramUser.id == AccessGrant.user_id,
+        )
+        if status is not None:
+            statement = statement.where(AccessGrant.status == status.value)
+        result = await self._session.execute(
+            statement.order_by(TelegramUser.telegram_user_id.asc())
+        )
+        return list(result.tuples())
+
+    async def set_latest_status(
+        self,
+        *,
+        telegram_user_id: int,
+        status: AccessStatus,
+        revoked_at: datetime | None = None,
+    ) -> AccessGrant | None:
+        result = await self._session.execute(
+            select(AccessGrant)
+            .join(TelegramUser, TelegramUser.id == AccessGrant.user_id)
+            .where(TelegramUser.telegram_user_id == telegram_user_id)
+            .order_by(AccessGrant.created_at.desc())
+            .limit(1)
+        )
+        grant = result.scalar_one_or_none()
+        if grant is None:
+            return None
+        grant.status = status.value
+        if status is AccessStatus.REVOKED:
+            grant.revoked_at = revoked_at or datetime.now(UTC)
+        await self._session.flush()
+        return grant
+
+
+class DurableAccessGrantRepository:
+    def __init__(self, session_factory: Any) -> None:
+        self._session_factory = session_factory
+
+    async def find_effective_by_telegram_user_id(
+        self, telegram_user_id: int
+    ) -> DomainAccessGrant | None:
+        async with self._session_factory() as session:
+            return await SqlAlchemyAccessGrantRepository(
+                session
+            ).find_effective_by_telegram_user_id(telegram_user_id)
+
+
+class SqlAlchemyAuditEventRepository:
+    def __init__(self, session: AsyncSession) -> None:
+        self._session = session
+
+    async def add(
+        self,
+        *,
+        event_type: str,
+        subject_type: str,
+        subject_id: str,
+        actor_user_id: UUID | None = None,
+        correlation_id: str | None = None,
+        metadata: dict[str, Any] | None = None,
+    ) -> AuditEvent:
+        event = AuditEvent(
+            event_type=event_type,
+            actor_user_id=actor_user_id,
+            subject_type=subject_type,
+            subject_id=subject_id,
+            correlation_id=correlation_id,
+            metadata_json=dict(metadata or {}),
+        )
+        self._session.add(event)
+        await self._session.flush()
+        return event
 
 
 class SqlAlchemyTelegramUpdateRepository:

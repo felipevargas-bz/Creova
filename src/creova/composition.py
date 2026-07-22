@@ -3,9 +3,14 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from creova.application.access import AccessService
-from creova.application.ports import ImageGenerationProvider, PromptAssistant
+from creova.application.ports import (
+    AccessGrantRepository,
+    ImageGenerationProvider,
+    PromptAssistant,
+)
 from creova.config import HealthState, ProviderAvailability, Settings, StartupDiagnostics
 from creova.domain.enums import CreativeProvider, ImageRenderer
+from creova.infrastructure.db import DurableAccessGrantRepository, create_async_session_factory
 from creova.infrastructure.fakes import FakeImageGenerationProvider, FakePromptAssistant
 from creova.infrastructure.memory import BootstrapAccessGrantRepository
 
@@ -26,10 +31,15 @@ def build_container(
     provider_health: dict[CreativeProvider, HealthState] | None = None,
 ) -> AppContainer:
     resolved_settings = settings or Settings()
-    repository = BootstrapAccessGrantRepository(
-        admin_ids=resolved_settings.bootstrap_admin_ids,
-        allowed_ids=resolved_settings.bootstrap_allowed_user_ids,
-    )
+    if resolved_settings.env == "test":
+        repository: AccessGrantRepository = BootstrapAccessGrantRepository(
+            admin_ids=resolved_settings.bootstrap_admin_ids,
+            allowed_ids=resolved_settings.bootstrap_allowed_user_ids,
+        )
+    else:
+        repository = DurableAccessGrantRepository(
+            create_async_session_factory(resolved_settings.database_url.get_secret_value())
+        )
     access_service = AccessService(repository)
     diagnostics = resolved_settings.startup_diagnostics(provider_health=provider_health)
     availability = diagnostics.provider_availability

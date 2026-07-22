@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 
 from creova.infrastructure.db.repositories import (
     SqlAlchemyAccessGrantRepository,
+    SqlAlchemyAuditEventRepository,
     SqlAlchemyTelegramUpdateRepository,
     SqlAlchemyUserRepository,
 )
@@ -23,12 +24,14 @@ class SqlAlchemyUnitOfWork:
         self.session: AsyncSession | None = None
         self.users: SqlAlchemyUserRepository
         self.access_grants: SqlAlchemyAccessGrantRepository
+        self.audit_events: SqlAlchemyAuditEventRepository
         self.telegram_updates: SqlAlchemyTelegramUpdateRepository
 
     async def __aenter__(self) -> SqlAlchemyUnitOfWork:
         self.session = self._session_factory()
         self.users = SqlAlchemyUserRepository(self.session)
         self.access_grants = SqlAlchemyAccessGrantRepository(self.session)
+        self.audit_events = SqlAlchemyAuditEventRepository(self.session)
         self.telegram_updates = SqlAlchemyTelegramUpdateRepository(self.session)
         return self
 
