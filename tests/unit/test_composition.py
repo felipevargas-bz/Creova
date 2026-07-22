@@ -28,6 +28,7 @@ def test_composition_wires_fakes_by_default_in_tests() -> None:
         container.image_renderers[ImageRenderer.CHATGPT],
         FakeImageGenerationProvider,
     )
+    assert container.provider_registry.require_renderer_handoff(CreativeProvider.CLAUDE)
 
 
 def test_composition_does_not_wire_provider_fakes_outside_tests() -> None:

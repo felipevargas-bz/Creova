@@ -8,6 +8,7 @@ from creova.application.ports import (
     ImageGenerationProvider,
     PromptAssistant,
 )
+from creova.application.provider_registry import ProviderCapabilityRegistry
 from creova.config import HealthState, ProviderAvailability, Settings, StartupDiagnostics
 from creova.domain.enums import CreativeProvider, ImageRenderer
 from creova.infrastructure.db import DurableAccessGrantRepository, create_async_session_factory
@@ -22,6 +23,7 @@ class AppContainer:
     access_service: AccessService
     startup_diagnostics: StartupDiagnostics
     provider_availability: tuple[ProviderAvailability, ...]
+    provider_registry: ProviderCapabilityRegistry
     unit_of_work: SqlAlchemyUnitOfWork | None
     prompt_assistants: dict[CreativeProvider, PromptAssistant]
     image_renderers: dict[ImageRenderer, ImageGenerationProvider]
@@ -53,6 +55,7 @@ def build_container(
         access_service=access_service,
         startup_diagnostics=diagnostics,
         provider_availability=availability,
+        provider_registry=ProviderCapabilityRegistry(availability),
         unit_of_work=unit_of_work,
         prompt_assistants=_build_prompt_assistants(resolved_settings, availability),
         image_renderers=_build_image_renderers(resolved_settings, availability),
