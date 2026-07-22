@@ -166,8 +166,8 @@ Minimum response procedure:
 - Operators should diagnose through metadata whenever possible.
 - A future social publisher must have its own privacy review and credential boundary.
 
-## Credential incident and provider-key policy
+## Credential and provider-key policy
 
-The Telegram token previously shared in a conversation must be considered compromised and rotated before use. The repository records only the public username `FeloCreova_bot` and secret variable names. Real Telegram, Google, OpenAI, and Anthropic credentials must never enter documentation, prompts, source code, fixtures, logs, commits, or database rows.
+The repository records only the public username `FeloCreova_bot` and secret variable names. Real Telegram, Google, OpenAI, and Anthropic credentials must never enter documentation, prompts, source code, fixtures, logs, commits, or database rows.
 
 Provider availability may be exposed as safe booleans or health states. Secret values, prefixes, lengths, hashes, and raw authentication failures must not be exposed to users. Full prompts are excluded from logs by default and access to stored prompt content is auditable.

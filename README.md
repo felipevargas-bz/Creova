@@ -1,114 +1,174 @@
 # Creova
 
-Creova is a private Telegram bot that helps an authorized user turn a simple idea into a carefully specified AI image. The bot conducts a short creative interview, refines the prompt, presents a final brief for confirmation, generates the image only after explicit approval, and delivers the result in Telegram.
+Creova is a private Telegram assistant for guided AI image creation. It helps authorized users turn a simple idea into a structured creative brief, refine the prompt, choose an image renderer, confirm the request, and receive the generated image through Telegram.
 
-The registered Telegram identity for this project is **@FeloCreova_bot**. The bot token is a secret and is never stored in this repository, documentation, or commits.
+The production Telegram bot username is **@FeloCreova_bot**.
 
-## Security notice before first use
+## Status
 
-A Telegram bot token was previously pasted into a chat. Treat that token as compromised. Open `@BotFather`, use `/revoke` or generate a new token for `@FeloCreova_bot`, and place only the rotated token in your local `.env` or production secret manager.
+Creova is under active development. The repository currently includes the application foundation, domain model, persistence schema, Telegram transport, provider capability registry, prompt-assistant contracts, and initial Gemini/OpenAI provider adapters.
 
-Never paste the replacement token into chats, prompts, or generated artifacts. Tooling must read credential names from configuration and use placeholders only.
+## Core Features
 
-## Repository status
+- Private Telegram workflow for image generation.
+- Deny-by-default access control by numeric Telegram user ID.
+- Guided creative-brief refinement with a configurable question limit.
+- Explicit review and confirmation before any billable generation.
+- Separate prompt-assistant and image-renderer provider roles.
+- Nano Banana and ChatGPT image rendering.
+- Claude prompt assistance with renderer handoff to Nano Banana or ChatGPT.
+- Durable PostgreSQL persistence for conversations, jobs, assets, usage, notifications, and audit events.
+- Provider credentials loaded from environment variables or production secret management.
+- Safe configuration diagnostics and redacted logs.
 
-This repository is an architecture and implementation foundation. It contains product documentation, ADRs, diagrams, a typed Python scaffold, starter tests, and an ordered implementation plan.
+## Architecture
 
-## MVP scope
+Creova follows a layered Python architecture:
 
-- Telegram is the only user interface.
-- Only private chats are accepted.
-- A deny-by-default allowlist authorizes numeric Telegram user IDs.
-- The user can select Nano Banana, ChatGPT, or Claude as the creative assistant.
-- Nano Banana and ChatGPT can be selected as image renderers.
-- Claude is a prompt-refinement assistant and must hand the approved prompt to Nano Banana or ChatGPT for rendering.
-- The bot asks only useful clarification questions and stores a structured creative brief.
-- Generation begins only after the user confirms the final brief, optimized prompt, renderer, aspect ratio, and quality.
-- Generated assets are stored privately and delivered through Telegram or a short-lived signed link.
-- After delivery, the bot explains that social publishing is not available yet and will arrive in a future version.
-
-## Explicitly out of scope
-
-- Social-network publishing, scheduling, credentials, or analytics.
-- Video generation in the MVP.
-- A web frontend or native application.
-- Public registration, billing, or marketplace functionality.
-- Long-lived memory across unrelated image requests.
-
-## Provider behavior
-
-| User-facing choice | Prompt assistance | Native image rendering in Creova |
-|---|---:|---:|
-| Nano Banana | Yes | Yes, through the Gemini API |
-| ChatGPT | Yes | Yes, through the OpenAI API |
-| Claude | Yes | No; the user must choose Nano Banana or ChatGPT as renderer |
-
-Provider names are user-facing labels. SDKs, model IDs, limits, and prices remain infrastructure configuration.
-
-## Conversation summary
-
-1. The user starts a new image request.
-2. The bot asks which creative assistant to use.
-3. The user sends a simple image idea.
-4. The assistant extracts a structured brief and identifies material ambiguity.
-5. The bot asks one concise, high-value question at a time, with a configurable maximum.
-6. The bot shows the creative brief and optimized final prompt.
-7. The user may confirm, edit a field, ask for another refinement, change provider, or cancel.
-8. If Claude was selected, the user chooses Nano Banana or ChatGPT as renderer before confirmation.
-9. Explicit confirmation creates a durable generation job.
-10. The worker renders, validates, stores, and delivers the image.
-11. The bot states that publishing is not supported yet but is planned.
-
-## Repository layout
+- `domain`: provider-neutral entities, enums, invariants, and state transitions.
+- `application`: use cases, ports, policies, prompt contracts, and orchestration.
+- `infrastructure`: PostgreSQL repositories, provider adapters, fakes, and local utilities.
+- `presentation`: Telegram polling/webhook transport and HTTP health endpoints.
+- `migrations`: Alembic schema migrations.
+- `tests`: unit and opt-in integration tests.
 
 ```text
-creova/
-├── AGENTS.md
-├── README.md
-├── pyproject.toml
-├── docker-compose.yml
-├── .env.example
-├── docs/
-│   ├── adr/
-│   └── diagrams/
-├── migrations/
-├── scripts/
-├── src/creova/
-└── tests/
+src/creova/
+├── application/
+├── domain/
+├── infrastructure/
+│   └── db/
+└── presentation/
+    └── telegram/
 ```
 
-`AGENTS.md` is intentionally included in the ZIP for local coding agents and intentionally listed in `.gitignore` so it is not committed.
+## Provider Model
 
-## Local setup
+| User label | Prompt assistance | Image rendering |
+|---|---:|---:|
+| Nano Banana | Yes | Yes, via Gemini |
+| ChatGPT | Yes | Yes, via OpenAI |
+| Claude | Yes | No, requires renderer handoff |
+
+Provider labels are product-facing names. SDK names, model IDs, credentials, capability checks, pricing, and rate limits remain infrastructure concerns.
+
+## Requirements
+
+- Python 3.12+
+- PostgreSQL 16+
+- Docker and Docker Compose for local infrastructure
+- Telegram bot credentials for runtime use
+- Provider API keys only for enabled providers
+
+## Local Setup
+
+Create the local environment:
 
 ```bash
 cp .env.example .env
 python -m venv .venv
 source .venv/bin/activate
 pip install -e '.[dev]'
+```
+
+Start PostgreSQL:
+
+```bash
+docker compose up -d postgres
+```
+
+Run checks:
+
+```bash
 pytest
 ruff check .
 mypy src
 ```
 
-Then set these values in `.env`:
+## Configuration
+
+Runtime configuration is loaded from environment variables. Local development may use `.env`; production should use a secret manager or platform-managed environment injection.
+
+Minimum runtime variables:
 
 ```env
 CREOVA_TELEGRAM_BOT_USERNAME=FeloCreova_bot
-CREOVA_TELEGRAM_BOT_TOKEN=replace-with-the-newly-rotated-token
-CREOVA_BOOTSTRAP_ADMIN_IDS=your-numeric-telegram-id
-CREOVA_BOOTSTRAP_ALLOWED_USER_IDS=your-numeric-telegram-id
+CREOVA_TELEGRAM_BOT_TOKEN=
+CREOVA_DATABASE_URL=postgresql+asyncpg://creova:creova@localhost:5435/creova
 ```
 
-Add only the API keys for providers you enable. Missing keys must disable the corresponding provider gracefully rather than crash unrelated flows.
+Provider variables are optional. Missing provider keys disable only that provider:
 
-## Non-negotiable rules
+```env
+CREOVA_GOOGLE_API_KEY=
+CREOVA_OPENAI_API_KEY=
+CREOVA_ANTHROPIC_API_KEY=
+```
 
-- Never commit or print real credentials.
-- Keep all code, identifiers, comments, logs, bot messages, documentation, and commits in English.
-- Every commit subject includes `🦅` and at least one change-related emoji.
-- Authorize only by numeric Telegram user ID.
-- Never generate before explicit user confirmation.
-- Never claim that Claude directly rendered an image.
-- Never add social publishing to the MVP.
-- Keep provider SDKs outside the domain and application layers.
+Model IDs are configurable:
+
+```env
+CREOVA_GOOGLE_IMAGE_MODEL=
+CREOVA_GOOGLE_ASSISTANT_MODEL=
+CREOVA_OPENAI_IMAGE_MODEL=
+CREOVA_OPENAI_ASSISTANT_MODEL=
+CREOVA_ANTHROPIC_ASSISTANT_MODEL=
+```
+
+## Running
+
+Polling mode:
+
+```bash
+CREOVA_TELEGRAM_MODE=polling creova-bot
+```
+
+Webhook API:
+
+```bash
+CREOVA_TELEGRAM_MODE=webhook creova-api
+```
+
+Administration CLI:
+
+```bash
+creova-admin access --help
+```
+
+## Testing
+
+Normal test runs do not call external provider APIs:
+
+```bash
+pytest
+```
+
+Real provider smoke tests are opt-in and require local credentials:
+
+```bash
+CREOVA_REAL_PROVIDER_SMOKE=1 pytest tests/integration/test_gemini_smoke.py
+CREOVA_REAL_PROVIDER_SMOKE_OPENAI=1 pytest tests/integration/test_openai_smoke.py
+```
+
+## Security
+
+- Never commit real credentials, tokens, signed URLs, database passwords, or provider keys.
+- Keep `.env`, `.env.*`, and local agent instructions ignored.
+- Redact secrets from logs and diagnostics.
+- Treat user prompts and reference content as untrusted creative data.
+- Authorize by numeric Telegram user ID, not usernames.
+- Require explicit confirmation before generation.
+
+## Documentation
+
+Project documentation lives under `docs/`:
+
+- `docs/00-project-definition.md`
+- `docs/01-product-requirements.md`
+- `docs/02-architecture.md`
+- `docs/03-domain-model.md`
+- `docs/adr/`
+
+## License
+
+No license has been published for this repository.

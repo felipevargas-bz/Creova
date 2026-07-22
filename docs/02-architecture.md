@@ -115,7 +115,7 @@ Only the worker may call an image renderer.
 ## 8. Credential architecture
 
 - `CREOVA_TELEGRAM_BOT_USERNAME=FeloCreova_bot` is public configuration.
-- `CREOVA_TELEGRAM_BOT_TOKEN` is secret configuration and must contain a rotated token.
+- `CREOVA_TELEGRAM_BOT_TOKEN` is secret configuration injected at runtime.
 - `CREOVA_GOOGLE_API_KEY`, `CREOVA_OPENAI_API_KEY`, and `CREOVA_ANTHROPIC_API_KEY` are optional provider secrets.
 - Provider menus are built from configured, healthy capabilities.
 - Secret values never enter domain objects, database rows, logs, metrics, or prompts.

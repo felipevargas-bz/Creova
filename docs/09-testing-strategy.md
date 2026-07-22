@@ -125,4 +125,4 @@ Concurrency tests must use barriers or controlled synchronization rather than ti
 
 Add tests proving that Nano Banana and ChatGPT can be both assistants and renderers, Claude can be an assistant but never a renderer, missing optional keys disable only the affected provider, no generation occurs before explicit confirmation, stale callbacks are rejected, question limits are enforced, `Review now` and `Use your best judgment` terminate questioning, and every successful delivery includes the future-publishing notice.
 
-Add secret-scanning tests or CI checks using fake token patterns only. Never place the previously exposed token in a test corpus.
+Add secret-scanning tests or CI checks using fake token patterns only. Never place real credentials in a test corpus.

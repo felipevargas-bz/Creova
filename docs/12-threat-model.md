@@ -140,8 +140,8 @@ Review this threat model when:
 - retention or regulated data requirements change;
 - a security incident reveals a new attack path.
 
-## Additional threats: exposed credentials and prompt orchestration
+## Additional threats: credential exposure and prompt orchestration
 
-Treat pasted or committed credentials as immediate account-control and budget-abuse threats. Mitigations include token rotation, secret-manager injection, repository scanning, log redaction, least-privilege provider keys, spend limits, and provider-specific circuit breakers.
+Treat credentials in source control, logs, prompts, screenshots, or build artifacts as immediate account-control and budget-abuse threats. Mitigations include credential rotation, secret-manager injection, repository scanning, log redaction, least-privilege provider keys, spend limits, and provider-specific circuit breakers.
 
 Prompt orchestration introduces risks of malicious instructions embedded in user text or reference images. Provider system prompts must treat user content as creative data, not privileged instructions. Structured output is validated before merging into domain state. The application owns authorization, question limits, provider choice, confirmation, and generation decisions.

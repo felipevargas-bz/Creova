@@ -50,7 +50,7 @@ No provider integrations were added.
 ## Risks
 
 - Local `.env` values can affect tests because `Settings` intentionally reads `.env`. Tests should pass with documented comma-separated values and should override secrets with fake values.
-- The Telegram token previously exposed outside the repository must remain treated as compromised. Only a rotated value may be used locally or in production secret storage.
+- Real credentials must be supplied only through local ignored environment files or production secret storage.
 - Missing optional provider keys must disable provider availability without crashing unrelated flows.
 - Claude handoff must remain enforced in UI, persistence, confirmation, and worker code.
 - Confirmation idempotency is the highest-cost boundary and needs broad tests before provider calls are introduced.

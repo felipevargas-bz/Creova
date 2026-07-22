@@ -85,7 +85,7 @@ Availability depends on configuration, health, policy, and current circuit-break
 ## 7. Credential handling
 
 - Bot username is public: `FeloCreova_bot`.
-- Bot token is secret and must be rotated because a previous value was exposed.
+- Bot token is secret configuration and must never be stored in repository artifacts.
 - No generated artifact or operational transcript contains a real secret.
 - Local secrets live in `.env`, which is ignored.
 - Production secrets live in a secret manager.

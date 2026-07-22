@@ -3,7 +3,7 @@
 ## Phase 0 — Foundation
 
 - Repository quality gates, configuration, logging, health checks, PostgreSQL, object storage, migrations, and CI.
-- Telegram token rotation and secret-management setup.
+- Telegram secret-management setup.
 - Allowlist administration and private-chat enforcement.
 
 ## Phase 1 — Assisted image MVP

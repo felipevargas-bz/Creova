@@ -9,8 +9,8 @@ This record describes checks performed on the assisted image foundation before p
 - Python source and tests compile successfully with `python -m compileall`.
 - Unit tests pass with `PYTHONPATH=src pytest -q`.
 - Result: 16 tests passed.
-- The known compromised Telegram token is absent from the repository.
-- No string matching the exposed token prefix is present.
+- No real Telegram token is present in the repository.
+- Secret scanning found no committed token-like values.
 - The public bot username is configured as `FeloCreova_bot`.
 - `.env` files and `AGENTS.md` are ignored; `.env.example` is retained.
 - The domain permits Nano Banana, ChatGPT, and Claude as creative assistants.
@@ -26,7 +26,7 @@ Ruff and Mypy were not installed in the packaging environment, so lint and stati
 ## External integrations not verified
 
 - Live Telegram polling and webhook behavior.
-- Rotated BotFather token validity.
+- BotFather token validity.
 - PostgreSQL migrations and concurrency behavior.
 - S3-compatible storage behavior.
 - Gemini / Nano Banana API behavior.

@@ -4,7 +4,7 @@ Execute the milestones in order. Each implementation phase must finish with test
 
 ## Milestones
 
-1. Audit the foundation and rotate the Telegram token outside the repository.
+1. Audit the foundation and verify secret-safe configuration.
 2. Complete configuration, secret redaction, provider availability, and composition root.
 3. Add PostgreSQL schema and migrations for access, conversations, briefs, requests, jobs, assets, usage, and audit records.
 4. Complete allowlist CLI and Telegram private-chat transport.

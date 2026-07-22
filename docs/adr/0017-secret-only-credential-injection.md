@@ -5,18 +5,16 @@
 
 ## Context
 
-The public bot username is known, but a Telegram token was exposed in a conversation. Embedding credentials in prompts or project files would allow anyone with access to control the bot or consume provider budgets.
+The public bot username is not a secret. Runtime credentials, provider keys, webhook secrets, and storage credentials are sensitive operational data and must not be embedded in prompts, project files, logs, fixtures, documentation, or commits.
 
 ## Decision
 
 - Document `FeloCreova_bot` as public identity.
-- Treat the exposed token as compromised and require rotation.
-- Load the replacement token and provider keys only from environment variables or a production secret manager.
+- Load the bot token and provider keys only from environment variables or a production secret manager.
 - Never include real values in prompts, code, tests, logs, documentation, or commits.
 - Validate required credential presence without printing values.
 
 ## Consequences
 
-- Initial setup includes a mandatory token-rotation step.
 - Local development requires an ignored `.env` file.
 - Provider availability is derived from safe configuration metadata.
